@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Preview - Job Application Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Job Application Assistant</a>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Step 3: Your Personalized Email</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="email-form" method="POST" action="/edit_email">
+                            <div class="mb-3">
+                                <label for="email_content" class="form-label">Email Content</label>
+                                <textarea class="form-control" id="email_content" name="email_content" rows="15">{{ email_content }}</textarea>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="/job_details" class="btn btn-secondary">Back</a>
+                                <div>
+                                    <button type="submit" class="btn btn-primary me-2">Update</button>
+                                    <button type="button" id="copy-btn" class="btn btn-success me-2">Copy to Clipboard</button>
+                                    <button type="button" id="download-btn" class="btn btn-info">Download as Text</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Next Steps</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Review and edit the email as needed</li>
+                            <li>Copy the email to your clipboard or download it as a text file</li>
+                            <li>Send the email from your preferred email client</li>
+                            <li>Attach your resume before sending</li>
+                        </ol>
+                        <div class="alert alert-info">
+                            <strong>Tip:</strong> Personalize the email further if you have additional information about the company or position.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-light py-4 mt-auto">
+        <div class="container text-center">
+            <p>Job Application Assistant &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Copy to clipboard functionality
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            const emailContent = document.getElementById('email_content');
+            emailContent.select();
+            document.execCommand('copy');
+            
+            alert('Email copied to clipboard!');
+        });
+        
+        // Download as text functionality
+        document.getElementById('download-btn').addEventListener('click', async () => {
+            const emailContent = document.getElementById('email_content').value;
+            
+            // Use the API endpoint to save the email
+            const response = await fetch('/save_email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email_content: emailContent })
+            });
+            
+            const data = await response.json();
+            
+            // Create a download link
+            const element = document.createElement('a');
+            const file = new Blob([data.email_content], {type: 'text/plain'});
+            element.href = URL.createObjectURL(file);
+            element.download = 'job_application_email.txt';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        });
+    </script>
+</body>
+</html>
