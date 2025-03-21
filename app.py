@@ -37,6 +37,31 @@ def job_details():
         return redirect(url_for('index'))
     return render_template('job_details.html')
 
+@app.route('/fetch_job_description', methods=['POST'])
+def fetch_job_description():
+    """API endpoint for fetching job description from URL via AJAX"""
+    job_url = request.form.get('job_url', '')
+    
+    if not job_url:
+        return jsonify({'success': False, 'message': 'No URL provided'})
+    
+    try:
+        assistant = JobApplicationAssistant()
+        success = assistant.search_job_description(job_url)
+        
+        if success:
+            # Return the extracted job description and other data
+            return jsonify({
+                'success': True,
+                'job_description': assistant.job_description,
+                'company_name': assistant.company_name if hasattr(assistant, 'company_name') else '',
+                'job_title': assistant.job_title if hasattr(assistant, 'job_title') else ''
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Could not extract job description'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/process_job', methods=['POST'])
 def process_job():
     job_url = request.form.get('job_url', '')
@@ -48,14 +73,9 @@ def process_job():
     assistant = JobApplicationAssistant()
     assistant.resume_text = session.get('resume_text', '')
     
-    # Process job details based on URL or manual entry
-    if job_url and not job_description:
-        success = assistant.search_job_description(job_url)
-        if not success:
-            flash('Could not extract job description from URL. Please paste it manually.')
-            return redirect(url_for('job_details'))
-    else:
-        assistant.job_description = job_description
+    # Process job details - we now rely more on manual entry
+    # since auto-extraction happened earlier via AJAX
+    assistant.job_description = job_description
     
     # Get company info
     assistant.get_company_info(company_name)

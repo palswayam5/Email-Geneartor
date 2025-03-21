@@ -79,23 +79,64 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const jobUrlInput = document.getElementById('job_url');
-        const jobDescriptionInput = document.getElementById('job_description');
-        
-        // Auto-fetch job description when URL loses focus
-        jobUrlInput.addEventListener('blur', async () => {
-            const url = jobUrlInput.value.trim();
-            if (url && jobDescriptionInput.value.trim() === '') {
-                // In a real implementation, you would make an API call to a backend endpoint
-                // that would fetch and extract the job description.
-                // For now, we'll just show a message.
-                jobDescriptionInput.placeholder = "Extracting job description...";
-                // Simulate a delay
-                setTimeout(() => {
-                    jobDescriptionInput.placeholder = "Job description couldn't be extracted automatically. Please paste it here...";
-                }, 2000);
-            }
-        });
+        // Frontend JavaScript for handling form interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            const jobUrlInput = document.getElementById('job_url');
+            const jobDescriptionInput = document.getElementById('job_description');
+            const jobForm = document.getElementById('job_form');
+            const loadingIndicator = document.getElementById('loading_indicator');
+
+            // Auto-fetch job description when URL loses focus
+            jobUrlInput.addEventListener('blur', async () => {
+                const url = jobUrlInput.value.trim();
+                if (url && jobDescriptionInput.value.trim() === '') {
+                    try {
+                        // Show loading state
+                        jobDescriptionInput.placeholder = "Extracting job description...";
+                        if (loadingIndicator) loadingIndicator.style.display = 'block';
+
+                        // Make an AJAX call to the backend endpoint
+                        const formData = new FormData();
+                        formData.append('job_url', url);
+
+                        const response = await fetch('/fetch_job_description', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            // Update the job description field
+                            jobDescriptionInput.value = data.job_description;
+                            // If we have company_name and job_title, fill those too
+                            if (data.company_name) {
+                                document.getElementById('company_name').value = data.company_name;
+                            }
+                            if (data.job_title) {
+                                document.getElementById('job_title').value = data.job_title;
+                            }
+                        } else {
+                            jobDescriptionInput.placeholder = "Job description couldn't be extracted automatically. Please paste it here...";
+                        }
+                    } catch (error) {
+                        console.error('Error fetching job description:', error);
+                        jobDescriptionInput.placeholder = "Error extracting job description. Please paste it here...";
+                    } finally {
+                        if (loadingIndicator) loadingIndicator.style.display = 'none';
+                    }
+                }
+            });
+    
+                // Handle form submission
+                jobForm.addEventListener('submit', function(e) {
+                    // Add any pre-submission validation here if needed
+                    // e.g., check if required fields are filled
+                    
+                    // If you want to show a loading state during submission
+                    if (loadingIndicator) loadingIndicator.style.display = 'block';
+                });
+            });
     </script>
 </body>
 </html>
